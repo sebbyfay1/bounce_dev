@@ -1,0 +1,18 @@
+{
+  "name": "events",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node-dev src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@bouncedev1/common": "^1.0.21",
+    "express": "^4.17.1",
+    "node-nats-streaming": "^0.3.2",
+    "ts-node-dev": "^1.1.8"
+  }
+}

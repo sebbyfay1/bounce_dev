@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hosts-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hosts
+  template:
+    metadata:
+      labels:
+        app: hosts
+    spec:
+      containers:
+        - name: hosts
+          image: sebbyfay/hosts
+          env:
+            - name: MONGO_URI
+              value: 'mongodb+srv://bounce_dev:bounce_dev1@cluster0.xmmui.mongodb.net/bounce_dev1?retryWrites=true&w=majority'
+            - name: JWT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: JWT_KEY
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hosts-srv
+spec:
+  selector:
+    app: hosts
+  ports:
+    - name: hosts
+      protocol: TCP
+      port: 3000
+      targetPort: 3000

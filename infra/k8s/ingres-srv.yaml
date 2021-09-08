@@ -1,0 +1,54 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-srv
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/use-regex: 'true'
+spec:
+  rules:
+    - host: bounce.dev
+      http:
+        paths:
+          - path: /api/users/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-srv
+                port:
+                  number: 3000
+          - path: /api/goers/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: goers-srv
+                port:
+                  number: 3000
+          - path: /api/follow/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: follows-srv
+                port:
+                  number: 3000
+          - path: /api/posts/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: posts-srv
+                port:
+                  number: 3000
+          - path: /api/hosts/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: hosts-srv
+                port:
+                  number: 3000
+          - path: /api/events/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: events-srv
+                port:
+                  number: 3000

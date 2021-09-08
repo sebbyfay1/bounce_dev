@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: follows-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: follows
+  template:
+    metadata:
+      labels:
+        app: follows
+    spec:
+      containers:
+        - name: follows
+          image: sebbyfay/follows
+          env:
+            - name: MONGO_URI
+              value: 'mongodb+srv://bounce_dev:bounce_dev1@cluster0.xmmui.mongodb.net/bounce_dev1?retryWrites=true&w=majority'
+            - name: JWT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: JWT_KEY
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: follows-srv
+spec:
+  selector:
+    app: follows
+  ports:
+    - name: follows
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
