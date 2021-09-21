@@ -39,36 +39,35 @@ router.post(
                 username,
                 isGoer
             }
-            const goerCollection = databaseClient.client.db('bounce_dev1').collection('test');
-            const result = await goerCollection.insertOne(goer);
+            const goersCollection = databaseClient.client.db('bounce_dev1').collection('test');
+            const result = await goersCollection.insertOne(goer);
             newObjectId = result.insertedId; 
         } else {
             const host: HostAttrs = {
                 username,
                 isGoer
             };
-            const goerCollection = databaseClient.client.db('bounce_dev1').collection('test');
-            const result = await goerCollection.insertOne(host);
+            const hostsCollection = databaseClient.client.db('bounce_dev1').collection('test');
+            const result = await hostsCollection.insertOne(host);
             newObjectId = result.insertedId; 
         }
 
         // create and save new user
-        const newUser: UserAttrs = {
+        const user: UserAttrs = {
             email,
             username,
             password: await Password.toHash(password),
             userId: newObjectId,
             isGoer
         };
-        const userCollection = databaseClient.client.db('bounce_dev1').collection('test');
-        const result = await userCollection.insertOne(newUser);
+        const result = await usersCollection.insertOne(user);
 
         // generate jwt
         const userJwt = jwt.sign(
             {
                 id: result.insertedId,
                 userId: newObjectId,
-                email: newUser.email
+                email: user.email
             }, 
             process.env.JWT_KEY!,
             {
@@ -77,7 +76,7 @@ router.post(
         );
 
         res.status(201).send({
-            newUser,
+            user,
             userJwt
         });
 });

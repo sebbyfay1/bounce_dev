@@ -8,9 +8,15 @@ export class PostCreatedListener extends Listener<PostCreatedEvent> {
   queueGroupName = 'feeder-service';
   
   onMessage(data: PostCreatedEvent['data'], msg: Message) {
+    console.log('message recieved', data);
+    if (!data.followers.length) { 
+      msg.ack();
+      return; 
+    }
     const session = databaseClient.client.startSession();
     var requests: Promise<void>[] = [];
     data.followers.forEach((followerId) => {
+      console.log(followerId);
       requests.push(FeedTransactions.addPostToFeed(followerId, data.post, session));
     });
     Promise.all(requests)
@@ -21,7 +27,6 @@ export class PostCreatedListener extends Listener<PostCreatedEvent> {
     .catch(async (error) => {
       console.log('Unable to add post to all followers feeds', error);
       await session.abortTransaction();
-      throw error;
     })
     .finally(async () => {
       await session.endSession();

@@ -21,7 +21,6 @@ router.post(
     const userCollection = databaseClient.client.db('bounce_dev1').collection('test'); 
     const user = await userCollection.findOne({ email });
 
-
     if (!user) { throw new BadRequestError('Email is not associated with profile'); }
     const passwordsMatch = await Password.compare(user.password, password);
     if (!passwordsMatch) { throw new BadRequestError('Invalid credentials'); }

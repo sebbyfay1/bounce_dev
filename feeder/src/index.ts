@@ -1,6 +1,7 @@
 import { databaseClient } from '@bouncedev1/common';
 import { natsWrapper } from './nats-wrapper';
 
+import { app } from './app';
 import { PostCreatedListener } from './events/post-created-listener';
 
 const start = async () => {
@@ -27,7 +28,12 @@ const start = async () => {
         new PostCreatedListener(natsWrapper.client).listen();
     } catch (err) {
         console.log(err);
+        throw err;
     }
+
+    app.listen(3000, () => {
+        console.log('Starting on port 3000!!!!!!');
+    });
 };
 
 start();

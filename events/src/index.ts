@@ -13,7 +13,7 @@ const start = async () => {
     try {
         await natsWrapper.connect(
             'bounce_dev',
-            'test',
+            'test4321',
             'http://nats-srv:4222'
         );
         natsWrapper.client.on('close', () => {

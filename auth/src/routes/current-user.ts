@@ -1,4 +1,5 @@
 import express from 'express';
+import { currentUser } from '@bouncedev1/common'
 
 const router = express.Router();
 

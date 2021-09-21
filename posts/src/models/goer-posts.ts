@@ -1,17 +1,17 @@
 import { ObjectId } from 'mongodb';
 
 export interface Post {
-    postId: string;
+    goerId: ObjectId;
+    postType: string;
     mediaUrl: string;
     eventId: ObjectId;
     caption: string;
     created: number;
-    comments: [string];
+    comments: string[];
 }
 
 export interface GoerPosts {
     goerId: ObjectId;
-    goerUsername: string;
     numPosts: number;
-    posts: Post[]
+    posts: ObjectId[]
 };

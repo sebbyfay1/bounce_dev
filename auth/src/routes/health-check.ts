@@ -2,8 +2,9 @@ import express from 'express';
 
 const router = express.Router();
 
-router.post('/api/users/health', (req, res) => {
-    res.send('The API is working');
+router.get('/api/users/health', (req, res) => {
+    console.log('Recieved a GET request to route: /api/users/health');
+    res.send({'messsage': 'The API is working'});
 });
 
 export { router as healthCheckRouter };

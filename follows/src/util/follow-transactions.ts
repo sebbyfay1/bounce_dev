@@ -1,25 +1,98 @@
 import { databaseClient, NotFoundError } from '@bouncedev1/common';
 import { ObjectId } from 'mongodb';
+import { Follow, GoerFollows } from '../models/goer';
 
 export class FollowTransactions {
-    static async follow(follower: any, followee: any, followerId: ObjectId, followeeId: ObjectId) {
-        const goerCollection = databaseClient.client.db('bounce_dev1').collection('test');
+    static deleteEntryFromFollowsArray(objectId: ObjectId, arr: Follow[]): Follow[] {
+        for (var index = 0; index < arr.length; index++) {
+            if (arr[index].goerId === objectId) {
+                arr.splice(index, 1)
+                break;
+            }
+        }
+        return arr;
+    }
+
+    static async follow(follower: GoerFollows, followee: GoerFollows, followerId: ObjectId, followeeId: ObjectId) {
+        const goerFollowsCollection = databaseClient.client.db('bounce_dev1').collection('goerFollows');
         const session = databaseClient.client.startSession();
         try {
             await session.withTransaction(async () => {
-                if (!follower.following) {
-                    follower.following = {}
+                follower.following.push({
+                    goerId: followeeId,
+                    created: Date.now(),
+                    status: "1"
+                });
+                followee.followers.push({
+                    goerId: followerId,
+                    created: Date.now(),
+                    status: "1"
+                });
+                followee.numFollowers += 1;
+                follower.numFollowing += 1;
+                const updatedFollowerResult = await goerFollowsCollection.replaceOne({ goerId: followerId }, follower, { session, upsert: true });
+                if (!updatedFollowerResult.matchedCount && !updatedFollowerResult.upsertedCount) {
+                    throw new NotFoundError();
                 }
-                if (!followee.followers) {
-                    followee.followers = {}
+                const updatedFolloweeResult = await goerFollowsCollection.replaceOne({ goerId: followeeId }, followee, { session, upsert: true });
+                if (!updatedFolloweeResult.matchedCount && !updatedFolloweeResult.upsertedCount) {
+                    throw new NotFoundError();
                 }
-                follower.following[followeeId.toString()] = Date.now();
-                followee.followers[followerId.toString()] = Date.now();
-                const updatedFollowerResult = await goerCollection.replaceOne({ _id: followerId }, follower, { session });
+            });
+            await session.commitTransaction();
+        } catch (err) {
+            throw err;
+        } finally { 
+            await session.endSession();
+        }
+    }
+
+    static async unfollow(follower: GoerFollows, followee: GoerFollows, followerId: ObjectId, followeeId: ObjectId) {
+        const goerFollowsCollection = databaseClient.client.db('bounce_dev1').collection('goerFollows');
+        const session = databaseClient.client.startSession();
+        try {
+            await session.withTransaction(async () => {
+                follower.following = this.deleteEntryFromFollowsArray(followeeId, follower.following);
+                followee.followers = this.deleteEntryFromFollowsArray(followerId, followee.followers);
+                follower.numFollowing -= 1;
+                followee.numFollowers -= 1;
+                const updatedFollowerResult = await goerFollowsCollection.replaceOne({ _id: followerId }, follower, { session });
                 if (!updatedFollowerResult.matchedCount) {
                     throw new NotFoundError();
                 }
-                const updatedFolloweeResult = await goerCollection.replaceOne({ _id: followeeId }, followee, { session });
+                const updatedFolloweeResult = await goerFollowsCollection.replaceOne({ _id: followeeId }, followee, { session });
+                if (!updatedFolloweeResult.matchedCount) {
+                    throw new NotFoundError();
+                }
+            });
+            await session.commitTransaction();
+        } catch (err) {
+            throw err;
+        } finally { 
+            await session.endSession();
+        }
+    }
+
+    static async requestFollow(follower: GoerFollows, followee: GoerFollows, followerId: ObjectId, followeeId: ObjectId) {
+        const goerFollowsCollection = databaseClient.client.db('bounce_dev1').collection('goerFollows');
+        const session = databaseClient.client.startSession();
+        try {
+            await session.withTransaction(async () => {
+                follower.followRequests.push({
+                    goerId: followeeId,
+                    created: Date.now(),
+                    status: "3"
+                });
+                followee.followerRequests.push({
+                    goerId: followerId,
+                    created: Date.now(),
+                    status: "3"
+                });
+                const updatedFollowerResult = await goerFollowsCollection.replaceOne({ _id: followerId }, follower, { session });
+                if (!updatedFollowerResult.matchedCount) {
+                    throw new NotFoundError();
+                }
+                const updatedFolloweeResult = await goerFollowsCollection.replaceOne({ _id: followeeId }, followee, { session });
                 if (!updatedFolloweeResult.matchedCount) {
                     throw new NotFoundError();
                 }
@@ -33,190 +106,55 @@ export class FollowTransactions {
         }
     }
 
-    static async unfollow(follower: any, followee: any, followerId: ObjectId, followeeId: ObjectId) {
-        const goerCollection = databaseClient.client.db('bounce_dev1').collection('test');
+    static async approvedFollowRequest(follower: GoerFollows, followee: GoerFollows, followerId: ObjectId, followeeId: ObjectId) {
+        const goerFollowsCollection = databaseClient.client.db('bounce_dev1').collection('goerFollows');
         const session = databaseClient.client.startSession();
         try {
             await session.withTransaction(async () => {
-                if (!follower.following) {
-                    follower.following = {}
-                }
-                if (!followee.followers) {
-                    followee.followers = {}
-                }
-                delete follower.following[followeeId.toString()];
-                delete followee.followers[followerId.toString()];
-                const updatedFollowerResult = await goerCollection.replaceOne({ _id: followerId }, follower, { session });
+                follower.followRequests = this.deleteEntryFromFollowsArray(followeeId, follower.followRequests);
+                followee.followerRequests = this.deleteEntryFromFollowsArray(followerId, followee.followerRequests);
+                follower.following.push({
+                    goerId: followeeId,
+                    created: Date.now(),
+                    status: "1"
+                });
+                followee.followers.push({
+                    goerId: followerId,
+                    created: Date.now(),
+                    status: "1"
+                });
+                follower.numFollowing += 1;
+                followee.numFollowers += 1;
+                const updatedFollowerResult = await goerFollowsCollection.replaceOne({ _id: followerId }, follower, { session });
                 if (!updatedFollowerResult.matchedCount) {
                     throw new NotFoundError();
                 }
-                const updatedFolloweeResult = await goerCollection.replaceOne({ _id: followeeId }, followee, { session });
+                const updatedFolloweeResult = await goerFollowsCollection.replaceOne({ _id: followeeId }, followee, { session });
                 if (!updatedFolloweeResult.matchedCount) {
                     throw new NotFoundError();
                 }
             });
             await session.commitTransaction();
         } catch (err) {
-            await session.abortTransaction();
             throw err;
         } finally { 
             await session.endSession();
         }
     }
 
-    static async requestFollow(follower: any, followee: any, followerId: ObjectId, followeeId: ObjectId) {
-        const goerCollection = databaseClient.client.db('bounce_dev1').collection('test');
+    static async denyFollowRequest(follower: GoerFollows, followee: GoerFollows, followerId: ObjectId, followeeId: ObjectId) {
+        const goerFollowsCollection = databaseClient.client.db('bounce_dev1').collection('goerFollows');
         const session = databaseClient.client.startSession();
         try {
             await session.withTransaction(async () => {
-                if (!follower.followRequests) {
-                    follower.followRequests = {}
-                }
-                if (!followee.followerRequests) {
-                    followee.followerRequests = {}
-                }
-                follower.followRequests[followeeId.toString()] = Date.now();
-                followee.followerRequests[followerId.toString()] = Date.now();
-                const updatedFollowerResult = await goerCollection.replaceOne({ _id: followerId }, follower, { session });
+                follower.followRequests = this.deleteEntryFromFollowsArray(followeeId, follower.followRequests);
+                followee.followerRequests = this.deleteEntryFromFollowsArray(followerId, followee.followerRequests);
+                const updatedFollowerResult = await goerFollowsCollection.replaceOne({ _id: followerId }, follower, { session });
                 if (!updatedFollowerResult.matchedCount) {
                     throw new NotFoundError();
                 }
-                const updatedFolloweeResult = await goerCollection.replaceOne({ _id: followeeId }, followee, { session });
+                const updatedFolloweeResult = await goerFollowsCollection.replaceOne({ _id: followeeId }, followee, { session });
                 if (!updatedFolloweeResult.matchedCount) {
-                    throw new NotFoundError();
-                }
-            });
-            await session.commitTransaction();
-        } catch (err) {
-            await session.abortTransaction();
-            throw err;
-        } finally { 
-            await session.endSession();
-        }
-    }
-
-    static async approvedFollowRequest(follower: any, followee: any, followerId: ObjectId, followeeId: ObjectId) {
-        const goerCollection = databaseClient.client.db('bounce_dev1').collection('test');
-        const session = databaseClient.client.startSession();
-        try {
-            await session.withTransaction(async () => {
-                if (!follower.following) {
-                    follower.following = {}
-                }
-                if (!followee.followers) {
-                    followee.followers = {}
-                }
-                if (!follower.followRequests) {
-                    follower.followRequests = {}
-                }
-                if (!followee.followerRequests) {
-                    followee.followerRequests = {}
-                }
-                delete follower.followRequests[followeeId.toString()];
-                delete followee.followerRequests[followerId.toString()];
-                follower.following[followeeId.toString()] = Date.now();
-                followee.followers[followerId.toString()] = Date.now();
-                const updatedFollowerResult = await goerCollection.replaceOne({ _id: followerId }, follower, { session });
-                if (!updatedFollowerResult.matchedCount) {
-                    throw new NotFoundError();
-                }
-                const updatedFolloweeResult = await goerCollection.replaceOne({ _id: followeeId }, followee, { session });
-                if (!updatedFolloweeResult.matchedCount) {
-                    throw new NotFoundError();
-                }
-            });
-            await session.commitTransaction();
-        } catch (err) {
-            await session.abortTransaction();
-            throw err;
-        } finally { 
-            await session.endSession();
-        }
-    }
-
-    static async denyFollowRequest(follower: any, followee: any, followerId: ObjectId, followeeId: ObjectId) {
-        const goerCollection = databaseClient.client.db('bounce_dev1').collection('test');
-        const session = databaseClient.client.startSession();
-        try {
-            await session.withTransaction(async () => {
-                if (!follower.followRequests) {
-                    follower.followRequests = {}
-                }
-                if (!followee.followerRequests) {
-                    followee.followerRequests = {}
-                }
-                delete follower.followRequests[followeeId.toString()];
-                delete followee.followerRequests[followerId.toString()];
-                const updatedFollowerResult = await goerCollection.replaceOne({ _id: followerId }, follower, { session });
-                if (!updatedFollowerResult.matchedCount) {
-                    throw new NotFoundError();
-                }
-                const updatedFolloweeResult = await goerCollection.replaceOne({ _id: followeeId }, followee, { session });
-                if (!updatedFolloweeResult.matchedCount) {
-                    throw new NotFoundError();
-                }
-            });
-            await session.commitTransaction();
-        } catch (err) {
-            await session.abortTransaction();
-            throw err;
-        } finally { 
-            await session.endSession();
-        }
-    }
-
-    static async followHost(follower: any, host: any, followerId: ObjectId, hostId: ObjectId) {
-        const goerCollection = databaseClient.client.db('bounce_dev1').collection('test');
-        const hostsCollection = databaseClient.client.db('bounce_dev1').collection('test');
-        const session = databaseClient.client.startSession();
-        try {
-            await session.withTransaction(async () => {
-                if (!follower.hostsFollowing) {
-                    follower.hostsFollowing = {}
-                }
-                if (!host.followers) {
-                    host.followers = {}
-                }
-                follower.hostsFollowing[hostId.toString()] = Date.now();
-                host.followers[followerId.toString()] = Date.now();
-                const updatedFollowerResult = await goerCollection.replaceOne({ _id: followerId }, follower, { session });
-                if (!updatedFollowerResult.matchedCount) {
-                    throw new NotFoundError();
-                }
-                const updatedHostResult = await hostsCollection.replaceOne({ _id: hostId }, host, { session });
-                if (!updatedHostResult.matchedCount) {
-                    throw new NotFoundError();
-                }
-            });
-            await session.commitTransaction();
-        } catch (err) {
-            await session.abortTransaction();
-            throw err;
-        } finally { 
-            await session.endSession();
-        }
-    }
-
-    static async unfollowHost(follower: any, host: any, followerId: ObjectId, hostId: ObjectId) {
-        const goerCollection = databaseClient.client.db('bounce_dev1').collection('test');
-        const hostsCollection = databaseClient.client.db('bounce_dev1').collection('test');
-        const session = databaseClient.client.startSession();
-        try {
-            await session.withTransaction(async () => {
-                if (!follower.hostsFollowing) {
-                    follower.hostsFollowing = {}
-                }
-                if (!host.followers) {
-                    host.followers = {}
-                }
-                delete follower.hostsFollowing[hostId.toString()];
-                delete host.followers[followerId.toString()];
-                const updatedFollowerResult = await goerCollection.replaceOne({ _id: followerId }, follower, { session });
-                if (!updatedFollowerResult.matchedCount) {
-                    throw new NotFoundError();
-                }
-                const updatedHostResult = await hostsCollection.replaceOne({ _id: hostId }, host, { session });
-                if (!updatedHostResult.matchedCount) {
                     throw new NotFoundError();
                 }
             });

@@ -12,6 +12,7 @@
   "dependencies": {
     "@bouncedev1/common": "^1.0.21",
     "express": "^4.17.1",
+    "express-async-errors": "^3.1.1",
     "node-nats-streaming": "^0.3.2",
     "ts-node-dev": "^1.1.8"
   }

@@ -7,7 +7,7 @@ metadata:
     nginx.ingress.kubernetes.io/use-regex: 'true'
 spec:
   rules:
-    - host: bounce.dev
+    - host: localhost
       http:
         paths:
           - path: /api/users/?(.*)
@@ -24,7 +24,7 @@ spec:
                 name: goers-srv
                 port:
                   number: 3000
-          - path: /api/follow/?(.*)
+          - path: /api/follows/?(.*)
             pathType: Prefix
             backend:
               service:
@@ -50,5 +50,12 @@ spec:
             backend:
               service:
                 name: events-srv
+                port:
+                  number: 3000
+          - path: /api/feeds/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: feeder-srv
                 port:
                   number: 3000
