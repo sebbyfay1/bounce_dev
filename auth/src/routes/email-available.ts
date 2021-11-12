@@ -13,7 +13,7 @@ router.get(
     validateRequest, 
     async (req: Request, res: Response) => {
     const { email } = req.params;
-    const usersCollection = databaseClient.client.db('bounce_dev1').collection('test');
+    const usersCollection = databaseClient.client.db('bounce_dev1').collection('users');
     const user = await usersCollection.findOne({ email: email}, {});
     if (user) {
         throw new NotAvailableError();

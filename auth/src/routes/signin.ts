@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import { validateRequest, BadRequestError, databaseClient } from '@bouncedev1/common';
@@ -17,10 +17,8 @@ router.post(
     validateRequest, 
     async (req: Request, res: Response) => {
     const { email, password } = req.body;
-
-    const userCollection = databaseClient.client.db('bounce_dev1').collection('test'); 
+    const userCollection = databaseClient.client.db('bounce_dev1').collection('users'); 
     const user = await userCollection.findOne({ email });
-
     if (!user) { throw new BadRequestError('Email is not associated with profile'); }
     const passwordsMatch = await Password.compare(user.password, password);
     if (!passwordsMatch) { throw new BadRequestError('Invalid credentials'); }

@@ -26,7 +26,7 @@ router.post(
     async (req: Request, res: Response) => {
         const { email, username, password, isGoer } = req.body;
 
-        const usersCollection = databaseClient.client.db('bounce_dev1').collection('test');
+        const usersCollection = databaseClient.client.db('bounce_dev1').collection('users');
         var cursor = await usersCollection.findOne({ email });
         if (cursor) { throw new BadRequestError('Email already in use'); }
         cursor = await usersCollection.findOne({ username });
@@ -37,9 +37,10 @@ router.post(
         if (isGoer) {
             const goer: GoerAttrs = {
                 username,
-                isGoer
+                isGoer,
+                created: Date.now()
             }
-            const goersCollection = databaseClient.client.db('bounce_dev1').collection('test');
+            const goersCollection = databaseClient.client.db('bounce_dev1').collection('goers');
             const result = await goersCollection.insertOne(goer);
             newObjectId = result.insertedId; 
         } else {
@@ -47,7 +48,7 @@ router.post(
                 username,
                 isGoer
             };
-            const hostsCollection = databaseClient.client.db('bounce_dev1').collection('test');
+            const hostsCollection = databaseClient.client.db('bounce_dev1').collection('hosts');
             const result = await hostsCollection.insertOne(host);
             newObjectId = result.insertedId; 
         }

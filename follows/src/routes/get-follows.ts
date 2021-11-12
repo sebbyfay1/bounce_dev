@@ -1,11 +1,9 @@
 import express, { Request, Response } from 'express';
 import { param } from 'express-validator';
 import { ObjectId } from 'mongodb';
-import { validateRequest, requireAuth, NotFoundError, databaseClient, currentUser } from '@bouncedev1/common';
-import { FollowTransactions } from '../util/follow-transactions';
+import { validateRequest, requireAuth, databaseClient } from '@bouncedev1/common';
 
-import { GoerFollows, createEmptyFollows } from '../models/goer';
-
+import { createEmptyFollows } from '../models/goer';
 
 const router = express.Router();
 
@@ -29,4 +27,4 @@ router.get(
     res.send(newGoerFollowsObj);
 });
 
-export { router as getFollowRouter };
+export { router as getFollowsRouter };

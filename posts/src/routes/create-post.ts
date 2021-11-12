@@ -1,10 +1,9 @@
 import express, { Request, Response } from 'express';
 import { body } from 'express-validator';
 import { ObjectId } from 'mongodb';
-import { randomBytes } from 'crypto';
 import { validateRequest, requireAuth, NotFoundError, databaseClient, currentUser } from '@bouncedev1/common';
 
-import { Post, GoerPosts } from '../models/goer-posts';
+import { Post, GoerPosts, CreateEmptyGoerPosts } from '../models/goer-posts';
 import { natsWrapper } from '../nats-wrapper';
 import { PostCreatedPublisher } from '../events/post-created-publisher';
 import { PostTransactions } from '../util/post-transaction';
@@ -37,22 +36,21 @@ router.post(
 
     var currentGoerPosts = await goerPostsCollection.findOne({ goerId: currentUserObjectId }) as GoerPosts;
     if (!currentGoerPosts) {
-        currentGoerPosts = <GoerPosts>{};
-        currentGoerPosts.goerId = currentUserObjectId;
-        currentGoerPosts.numPosts = 0;
-        currentGoerPosts.posts = [];
+        currentGoerPosts = CreateEmptyGoerPosts(currentUserObjectId);
     }
     const insertedPostId = await PostTransactions.post(currentGoerPosts, newPost, currentUserObjectId);
+    console.log('making request to get followers');
 
     const headers = {
         "jwt": req.headers.jwt
     };
     const response = await fetch(`http://follows-srv:3000/api/follows/goer-followers/${currentUserObjectId}`, { headers: headers });
     const followersJson = await response.json();
+    console.log('followers', followersJson);
     if (followersJson.length) {
         await new PostCreatedPublisher(natsWrapper.client).publish({
             post: insertedPostId,
-            followers: Object.keys(followersJson)
+            followers: followersJson
           });
     }
     res.sendStatus(201);

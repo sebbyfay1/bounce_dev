@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: statuses-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: statuses
+  template:
+    metadata:
+      labels:
+        app: statuses
+    spec:
+      containers:
+        - name: statuses
+          image: sebbyfay/statuses
+          env:
+            - name: MONGO_URI
+              value: 'mongodb+srv://bounce_dev:bounce_dev1@cluster0.xmmui.mongodb.net/bounce_dev1?retryWrites=true&w=majority'
+            - name: JWT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: JWT_KEY
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: statuses-srv
+spec:
+  selector:
+    app: statuses
+  ports:
+    - name: statuses
+      protocol: TCP
+      port: 3000
+      targetPort: 3000

@@ -1,4 +1,5 @@
 export interface GoerAttrs {
     username: string,
-    isGoer: boolean
+    isGoer: boolean,
+    created: number
 }

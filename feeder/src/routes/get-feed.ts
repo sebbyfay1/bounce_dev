@@ -19,28 +19,29 @@ router.get(
         throw new NotFoundError();
     }
 
-    var populatedFeed: {}[] = [];
+    var populatedFeed: any[] = [];
     const postGetter = new PostGetter(req.headers.jwt as string);
     var requests: Promise<GetPostPromise>[] = [];
     for (var index = 0; index < goerFeed.posts.length; index++) {
         requests.push(postGetter.getPost(goerFeed.posts[index]));
     }
     await Promise.all(requests)
-    .then(async (getPostPromises) => {
+    .then((getPostPromises) => {
         getPostPromises.map((getPostPromise) => {
             if (getPostPromise.activePost) {
                 populatedFeed.push(getPostPromise.post);
             }
         });
     })
-    .catch(async (error) => {
-      console.log('Unable to add post to all followers feeds', error);
+    .catch((error) => {
+      console.log('Unable to get the posts on a users feed', error);
       throw new DatabaseConnectionError();
     })
-    .finally(async () => {
+    .finally(() => {
     });
 
-    res.send(populatedFeed);
+
+    res.send({ feed: populatedFeed });
 });
 
 export { router as getFeedRouter };

@@ -9,8 +9,8 @@ export interface Follow {
 export interface GoerFollows {
     goerId: ObjectId;
     isPrivate: boolean;
-    numFollowers: number
-    numFollowing: number
+    numFollowers: number;
+    numFollowing: number;
     following: Follow[];
     followers: Follow[];
     followRequests: Follow[];
@@ -25,6 +25,16 @@ export function createEmptyFollows(goerId: ObjectId): GoerFollows {
     goerFollows.numFollowing = 0;
     goerFollows.followers = [];
     goerFollows.following = [];
+    goerFollows.followers.push({
+        goerId: goerId,
+        created: Date.now(),
+        status: '1'
+    });
+    goerFollows.following.push({
+        goerId: goerId,
+        created: Date.now(),
+        status: '1'
+    });
     goerFollows.followRequests = [];
     goerFollows.followerRequests = [];
     return goerFollows

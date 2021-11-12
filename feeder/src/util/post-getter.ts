@@ -12,25 +12,20 @@ export class PostGetter {
         this.jwt = jwt;
     }
 
-    async getPost(postId: ObjectId): Promise<any> {
+    async getPost(postId: ObjectId): Promise<GetPostPromise> {
         const headers = {
             "jwt": this.jwt
         }
-        return new Promise(async (reject, resolve) => {
-            const response = await fetch(`http://follows-srv:3000/api/posts/goer/post/${postId}`, { headers: headers });
-            if (response.ok) {
-                const json = await response.json();
-                return resolve({
-                    activePost: true,
-                    post: json
-                });
-            } else {
-                return resolve({
-                    activePost: false,
-                    post: {}
-                });
-            }
-            reject(new NotFoundError());
+        const response = await fetch(`http://posts-srv:3000/api/posts/goer/post/${postId}`, { headers: headers });
+        var postJson: any | undefined = undefined;
+        if (response.ok) {
+            postJson = await response.json();
+        }
+        return new Promise((resolve, reject) => {
+            resolve({
+                activePost: response.ok,
+                post: postJson
+            });
         });
     }
 }

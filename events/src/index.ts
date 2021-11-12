@@ -20,8 +20,14 @@ const start = async () => {
             console.log('NATS connection closed!');
             process.exit();
         });
-        process.on('SIGINT', () => natsWrapper.client.close());
-        process.on('SIGTERM', () => natsWrapper.client.close());
+        process.on('SIGINT', () => {
+            console.log('SIGINT');
+            natsWrapper.client.close()
+        });
+        process.on('SIGTERM', () => {
+            console.log('SIGTERM');
+            natsWrapper.client.close()
+        });
 
         await databaseClient.connect(process.env.MONGO_URI);
     } catch (err) {

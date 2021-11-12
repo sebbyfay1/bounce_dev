@@ -1,6 +1,7 @@
+import { ObjectId } from 'mongodb';
 
-
-export interface GoerAttrs {
+export interface Goer {
+    userId: ObjectId
     username: string,
     isGoer: boolean,
     isPrivate: boolean,
@@ -10,6 +11,7 @@ export interface GoerAttrs {
     bio: string,
     birthday: Date,
 
-    address: string,
-    city: string
+    city: string,
+
+    profilePictureUrl: string
 }

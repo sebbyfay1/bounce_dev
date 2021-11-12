@@ -1,65 +1,71 @@
-import express, { Request, Response } from 'express';
-import { body } from 'express-validator';
+import express, { NextFunction, Request, Response } from 'express';
+import { body, validationResult } from 'express-validator';
 import { ObjectId } from 'mongodb';
 import { randomBytes } from 'crypto';
-import { validateRequest, requireAuth, NotFoundError, databaseClient, currentUser } from '@bouncedev1/common';
+import { validateRequest, requireAuth, NotFoundError, databaseClient, currentUser, RequestValidationError, DatabaseConnectionError } from '@bouncedev1/common';
 
-import { Event } from '../models/event';
+import { Event, GoerEvents, createEmptyGoerEvents } from '../models/event';
+import { EventTransactions } from '../util/event-transactions';
 
+const fetch = require('node-fetch');
 const router = express.Router();
 
 router.post(
-    '/api/events/create/',
+    '/api/events/goer/create/',
     requireAuth,
     [
-        body('hostName').notEmpty().isString(),
-
-        body('name').notEmpty().isString(),
-        body('description').optional().isString(),
-        body('address').notEmpty().isString(),
-
-        body('startDate').notEmpty().isDate({
-            format: 'YYYY-MM-DD',
-            delimiters: ['/', '-'],
-            strictMode: false
-        }),
-        body('endDate').notEmpty().isDate({
-            format: 'YYYY-MM-DD',
-            delimiters: ['/', '-'],
-            strictMode: false
-        }),
-        body('startTime').notEmpty().isString(),
-        body('endTime').notEmpty().isString(),
-
-        body('mediaUrls').notEmpty().isURL(),
-
-        body('isGoer').notEmpty().isBoolean(),
-        body('isPublic').notEmpty().isBoolean
+        body('name').notEmpty(),
+        body('description').optional(),
+        body('address').notEmpty(),
+        body('startTime').notEmpty(),
+        body('endTime').notEmpty(),
+        body('isPublic').notEmpty().isBoolean(),
+        body('mediaUrl').optional().isURL()
     ], 
     validateRequest, 
     async (req: Request, res: Response) => {
-    const { hostName, name, description, address, startDate, endDate, startTime, endTime, mediaUrls, isGoer, isPublic } = req.body;
+    const { name, description, address, startTime, endTime, mediaUrl, isPublic } = req.body;
     const currentUserObjectId = ObjectId.createFromHexString(req.currentUser!.userId);
 
     const newEvent = <Event>{};
-    newEvent.hostName = hostName;
     newEvent.hostId = currentUserObjectId;
-    newEvent.isGoer = isGoer;
+    newEvent.hostIsGoer = true;
     newEvent.created = Date.now();
     newEvent.name = name;
     newEvent.description = description;
     newEvent.address = address;
-    newEvent.startDate = startDate;
-    newEvent.endDate = endDate;
     newEvent.startTime = startTime;
     newEvent.endTime = endTime;
     newEvent.isPublic = isPublic;
-    newEvent.mediaUrls = mediaUrls.split(',');
+    newEvent.mediaUrl = mediaUrl;
 
-    const eventsCollection = databaseClient.client.db('bounce_dev1').collection('test');
-    eventsCollection.insertOne(newEvent);
-
-    res.sendStatus(201);
+    const goerEventsCollection = databaseClient.client.db('bounce_dev1').collection('goerEvents');
+    var goerEvents = await goerEventsCollection.findOne({ goerId: currentUserObjectId }) as GoerEvents;
+    if (!goerEvents) {
+        goerEvents = createEmptyGoerEvents(currentUserObjectId);
+    }
+    console.log(goerEvents);
+    console.log('inserting event to table');
+    const insertedEventId = await EventTransactions.createEvent(goerEvents, newEvent, currentUserObjectId);
+    console.log(insertedEventId);
+    const headers = {
+        'jwt': req.headers.jwt,
+        'Content-Type': 'application/json'
+    }
+    const body = {
+        'eventId': insertedEventId.toHexString()
+    }
+    console.log('mkaing request');
+    const followEventResponse = await fetch('http://follows-srv:3000/api/follows/goer-attends/event', { 
+        method: 'post',
+        body: JSON.stringify(body),
+        headers: headers
+    });
+    console.log(followEventResponse);
+    if (!followEventResponse.ok) {
+        throw new DatabaseConnectionError();
+    }
+    res.send({ id: insertedEventId });
 });
 
 export { router as createEventRouter };

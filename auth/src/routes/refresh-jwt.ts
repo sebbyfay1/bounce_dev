@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
-import { validateRequest, requireAuth } from '@bouncedev1/common';
+import { validateRequest, requireAuth, databaseClient, NotAuthorizedError } from '@bouncedev1/common';
 
 const router = express.Router();
 
@@ -11,8 +11,11 @@ router.get(
     [], 
     validateRequest, 
     async (req: Request, res: Response) => {
+    console.log(req.currentUser!);
+    const userCollection = databaseClient.client.db('bounce_dev1').collection('users'); 
+    const user = await userCollection.findOne({ email: req.currentUser!.email });
+    if (!user) { throw new NotAuthorizedError(); }
     const currentUser = req.currentUser!;
-    console.log(currentUser);
     const userJwt = jwt.sign(
         {
             id: currentUser.id,

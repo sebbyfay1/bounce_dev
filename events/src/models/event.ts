@@ -2,7 +2,7 @@ import { ObjectId } from 'mongodb';
 
 export interface Event {
     hostId: ObjectId;
-    isGoer: boolean;
+    hostIsGoer: boolean;
     created: number;
     hostName: string;
 
@@ -15,8 +15,17 @@ export interface Event {
     endTime: String;
 
     isPublic: boolean;
-    mediaUrls: string[];
+    mediaUrl: string;
+}
 
-    followers: {};
-    goers: {};
+export interface GoerEvents {
+    goerId: ObjectId;
+    events: ObjectId[];
+}
+
+export function createEmptyGoerEvents(goerId: ObjectId): GoerEvents {
+    const goerEvents = <GoerEvents>{};
+    goerEvents.goerId = goerId;
+    goerEvents.events = [];
+    return goerEvents;
 }

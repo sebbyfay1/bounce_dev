@@ -33,4 +33,4 @@ router.post(
     res.sendStatus(201);
 });
 
-export { router as setPrivateRouter };
+export { router as setGoerPrivateRouter };
