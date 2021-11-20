@@ -4,6 +4,7 @@ import { ObjectId, Document } from 'mongodb';
 import { validateRequest, requireAuth, NotFoundError, databaseClient, DatabaseConnectionError } from '@bouncedev1/common';
 
 import { Post, GoerPosts, GetPostPromise, CreateEmptyGoerPosts } from '../models/goer-posts';
+import { CreateGoerPostsFromDoc } from '../models/goer-posts';
 import { EventGetter } from '../util/event-getter';
 import { PostGetter } from '../util/post-getter';
 
@@ -24,12 +25,12 @@ router.get(
         goerObjectId = ObjectId.createFromHexString(goerId);
     }
     const goerPostsCollection = databaseClient.client.db('bounce_dev1').collection('goerPosts');
-    var goerPosts = await goerPostsCollection.findOne({ goerId: goerObjectId }) as GoerPosts;
-    if (!goerPosts) {
-        goerPosts = CreateEmptyGoerPosts(goerObjectId);
-        return res.send(goerPosts);
+    const goerPostsDoc = await goerPostsCollection.findOne({ goerId: goerObjectId });
+    if (!goerPostsDoc) {
+        return res.send(CreateEmptyGoerPosts(goerObjectId));
     }
-    const eventGetter = new EventGetter(req.headers.jwt as string);
+    const goerPosts = CreateGoerPostsFromDoc(goerPostsDoc);
+
     const postGetter = new PostGetter(req.headers.jwt! as string);
     var populatedPosts: any[] = [];
     var postPromises: Promise<GetPostPromise>[] = [];

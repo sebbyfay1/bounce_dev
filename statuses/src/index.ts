@@ -1,5 +1,6 @@
 import { databaseClient } from '@bouncedev1/common';
 import { natsWrapper } from './nats-wrapper';
+import { exit } from 'process';
 
 import { app } from './app';
 import { AttendingEventListener } from './events/attending-event-listener';
@@ -18,13 +19,13 @@ const start = async () => {
             'test248',
             'http://nats-srv:4222'
         );
+        new AttendingEventListener(natsWrapper.client).listen();
         natsWrapper.client.on('close', () => {
-            console.log('NATS connection closed!');
-            process.exit();
+            console.log('NATS connection closed!!!!!!!');
+            exit(1);
         });
         process.on('SIGINT', () => natsWrapper.client.close());
         process.on('SIGTERM', () => natsWrapper.client.close());
-        new AttendingEventListener(natsWrapper.client).listen();
     } catch (err) {
         console.log(err);
         throw err;

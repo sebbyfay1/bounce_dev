@@ -7,6 +7,8 @@ import { CreateEmptyGoerStatuses, GoerStatuses, Status } from '../models/goer-st
 import { StatusCreatedPublisher } from './status-created-publisher';
 import { natsWrapper } from '../nats-wrapper';
 
+const fetch = require('node-fetch');
+
 export class AttendingEventListener extends Listener<AttendingEventEvent> {
   readonly subject = Subjects.EventAttending;
   queueGroupName = 'statuses-service';

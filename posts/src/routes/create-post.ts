@@ -3,7 +3,7 @@ import { body } from 'express-validator';
 import { ObjectId } from 'mongodb';
 import { validateRequest, requireAuth, NotFoundError, databaseClient, currentUser } from '@bouncedev1/common';
 
-import { Post, GoerPosts, CreateEmptyGoerPosts } from '../models/goer-posts';
+import { Post, GoerPosts, CreateEmptyGoerPosts, CreateGoerPostsFromDoc } from '../models/goer-posts';
 import { natsWrapper } from '../nats-wrapper';
 import { PostCreatedPublisher } from '../events/post-created-publisher';
 import { PostTransactions } from '../util/post-transaction';
@@ -23,8 +23,7 @@ router.post(
     async (req: Request, res: Response) => {
     const { mediaUrl, eventId, caption } = req.body;
     const currentUserObjectId = ObjectId.createFromHexString(req.currentUser!.userId);
-    const eventObjectId = currentUserObjectId;
-    const goerPostsCollection = databaseClient.client.db('bounce_dev1').collection('goerPosts');
+    const eventObjectId = currentUserObjectId
 
     const newPost = <Post>{};
     newPost.goerId = currentUserObjectId;
@@ -34,10 +33,10 @@ router.post(
     newPost.mediaUrl = mediaUrl;
     newPost.created = Date.now();
 
-    var currentGoerPosts = await goerPostsCollection.findOne({ goerId: currentUserObjectId }) as GoerPosts;
-    if (!currentGoerPosts) {
-        currentGoerPosts = CreateEmptyGoerPosts(currentUserObjectId);
-    }
+    const goerPostsCollection = databaseClient.client.db('bounce_dev1').collection('goerPosts');
+    const currentGoerPostsDoc = await goerPostsCollection.findOne({ goerId: currentUserObjectId });
+    const currentGoerPosts: GoerPosts = currentGoerPostsDoc ? CreateGoerPostsFromDoc(currentGoerPostsDoc) : CreateEmptyGoerPosts(currentUserObjectId);
+
     const insertedPostId = await PostTransactions.post(currentGoerPosts, newPost, currentUserObjectId);
     console.log('making request to get followers');
 

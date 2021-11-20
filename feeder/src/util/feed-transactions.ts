@@ -32,7 +32,7 @@ export class FeedTransactions {
             if (!feed) {
                 feed = CreateEmptyGoerFeed(followerObjectId);
             }
-            feed.statuses.push(status);
+            feed.statuses.push(ObjectId.createFromHexString(status));
             var success = false;
             await session.withTransaction(async () => {
                 const result = await feedCollection.replaceOne({ goerId: followerObjectId }, feed!, { session, upsert: true });

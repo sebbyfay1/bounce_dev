@@ -5,19 +5,20 @@ import { GetStatusPromise } from '../models/feed';
 
 const fetch = require('node-fetch');
 
-export class PostGetter {
+export class StatusGetter {
     jwt: string;
 
     constructor(jwt: string) {
         this.jwt = jwt;
     }
 
-    async getPost(postId: ObjectId): Promise<GetStatusPromise> {
+    async getStatus(statusId: ObjectId): Promise<GetStatusPromise> {
         const headers = {
             "jwt": this.jwt
         }
-        const response = await fetch(`http://statuses-srv:3000/api/statuses/goer/status/${postId}`, { headers: headers });
+        const response = await fetch(`http://statuses-srv:3000/api/statuses/goer/status/${statusId}`, { headers: headers });
         var statusJson: any | undefined = undefined;
+        console.log('resposen', response);
         if (response.ok) {
             statusJson = await response.json();
         }

@@ -3,6 +3,7 @@ import { natsWrapper } from './nats-wrapper';
 
 import { app } from './app';
 import { PostCreatedListener } from './events/post-created-listener';
+import { StatusCreatedListener } from './events/status-created-listener';
 
 const start = async () => {
     if (!process.env.JWT_KEY) {
@@ -26,6 +27,7 @@ const start = async () => {
         process.on('SIGINT', () => natsWrapper.client.close());
         process.on('SIGTERM', () => natsWrapper.client.close());
         new PostCreatedListener(natsWrapper.client).listen();
+        new StatusCreatedListener(natsWrapper.client).listen();
     } catch (err) {
         console.log(err);
         throw err;

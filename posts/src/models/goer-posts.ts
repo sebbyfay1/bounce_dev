@@ -17,11 +17,31 @@ export interface Post {
     comments: string[];
 }
 
+export function CreatePostFromDoc(doc: any): Post {
+    const post = <Post>{};
+    post.goerId = doc.goerId;
+    post.postType = doc.postType;
+    post.mediaUrl = doc.mediaUrl;
+    post.eventId = doc.eventId;
+    post.caption = doc.caption;
+    post.created = doc.created;
+    post.comments = doc.comments;
+    return post;
+}
+
 export interface GoerPosts {
     goerId: ObjectId;
     numPosts: number;
-    posts: ObjectId[]
+    posts: ObjectId[];
 };
+
+export function CreateGoerPostsFromDoc(doc: any): GoerPosts {
+    const goerPosts = <GoerPosts>{};
+    goerPosts.goerId = doc.goerId;
+    goerPosts.numPosts = doc.numPosts;
+    goerPosts.posts = doc.posts;
+    return goerPosts;
+}
 
 export interface GetPostPromise {
     activePost: boolean;

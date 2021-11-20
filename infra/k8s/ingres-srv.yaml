@@ -59,3 +59,10 @@ spec:
                 name: feeder-srv
                 port:
                   number: 3000
+          - path: /api/statuses/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: statuses-srv
+                port:
+                  number: 3000
